@@ -14,7 +14,7 @@ Main goal of `DMH` is to ensure that actions can be executed only when you are d
 - Multiple action execution methods (`json_post`, `bulksms`, `mail`)
 
 # How it works
-<img width="1023" alt="dmh-flow" src="https://github.com/user-attachments/assets/63a5a1a9-c692-4ade-a971-073b807653fe" />
+<img width="1023" alt="Diagram showing the Dead-Man-Hand workflow: User creates action, DMH encrypts it, sends key to Vault, Vault holds key until user is unavailable, then releases key for DMH to decrypt and execute action." src="https://github.com/user-attachments/assets/63a5a1a9-c692-4ade-a971-073b807653fe" />
 
 1. User creates action
 2. DMH encrypts action with [age](https://github.com/FiloSottile/age)
