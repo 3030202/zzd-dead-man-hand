@@ -4,7 +4,9 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/mail"
+	"strconv"
 
 	"dmh/internal/state"
 
@@ -42,11 +44,27 @@ func (d *ExecuteMail) Run() error {
 	var client *gomail.Client
 	var err error
 
-	if d.config.Username != "" {
-		client, err = gomail.NewClient(d.config.Server, tlsPolicy, gomail.WithSMTPAuth(gomail.SMTPAuthPlain), gomail.WithUsername(d.config.Username), gomail.WithPassword(d.config.Password))
-	} else {
-		client, err = gomail.NewClient(d.config.Server, tlsPolicy)
+	server := d.config.Server
+	var portOption gomail.Option
+
+	if host, port, err := net.SplitHostPort(server); err == nil {
+		server = host
+		portInt, err := strconv.Atoi(port)
+		if err == nil {
+			portOption = gomail.WithPort(portInt)
+		}
 	}
+
+	opts := []gomail.Option{tlsPolicy}
+	if portOption != nil {
+		opts = append(opts, portOption)
+	}
+
+	if d.config.Username != "" {
+		opts = append(opts, gomail.WithSMTPAuth(gomail.SMTPAuthPlain), gomail.WithUsername(d.config.Username), gomail.WithPassword(d.config.Password))
+	}
+
+	client, err = gomail.NewClient(server, opts...)
 
 	if err != nil {
 		return err
