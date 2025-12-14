@@ -1,4 +1,4 @@
-![dead-man-hand-logo](https://github.com/user-attachments/assets/0a0e041a-e76b-471a-9b05-14288a7325cb)
+![Dead Man Hand Logo](https://github.com/user-attachments/assets/0a0e041a-e76b-471a-9b05-14288a7325cb)
 
 # Idea
 Dead-Man-Hand will execute pre-added actions when you will no longer be "available".
@@ -14,7 +14,7 @@ Main goal of `DMH` is to ensure that actions can be executed only when you are d
 - Multiple action execution methods (`json_post`, `bulksms`, `mail`)
 
 # How it works
-<img width="1023" alt="dmh-flow" src="https://github.com/user-attachments/assets/63a5a1a9-c692-4ade-a971-073b807653fe" />
+<img width="1023" alt="Data flow diagram of Dead Man Hand. Steps are detailed in the list below." src="https://github.com/user-attachments/assets/63a5a1a9-c692-4ade-a971-073b807653fe" />
 
 1. User creates action
 2. DMH encrypts action with [age](https://github.com/FiloSottile/age)
