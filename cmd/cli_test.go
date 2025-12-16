@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -160,6 +162,61 @@ func TestUpdateAlive(t *testing.T) {
 		}
 
 	}
+}
+
+func captureOutput(f func()) string {
+	old := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	f()
+
+	w.Close()
+	os.Stdout = old
+
+	var buf bytes.Buffer
+	io.Copy(&buf, r)
+	return buf.String()
+}
+
+func TestListActionsOutput(t *testing.T) {
+	// Setup mock server returning non-pretty JSON
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`[{"id":"1","name":"action1"},{"id":"2","name":"action2"}]`))
+	}
+	server := httptest.NewServer(http.HandlerFunc(handler))
+	defer server.Close()
+
+	// Mock getClient
+	originalGetClient := getClient
+	defer func() { getClient = originalGetClient }()
+	getClient = func(*cli.Command) *http.Client {
+		return server.Client()
+	}
+
+	cmd := createCLI()
+	params := []string{"dmh-cli", "action", "list", "--server", server.URL}
+
+	output := captureOutput(func() {
+		cmd.Run(context.Background(), params)
+	})
+
+	// Check if output is pretty printed (contains newlines and indentation)
+	// The json.Encode will add a newline at the end as well.
+	expectedPretty := `[
+  {
+    "id": "1",
+    "name": "action1"
+  },
+  {
+    "id": "2",
+    "name": "action2"
+  }
+]
+`
+	require.Equal(t, expectedPretty, output)
 }
 
 func TestListActions(t *testing.T) {
