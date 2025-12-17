@@ -182,8 +182,27 @@ func listActions(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
 	}
 
-	_, err = io.Copy(os.Stdout, resp.Body)
-	return err
+	return printJSON(resp.Body, os.Stdout)
+}
+
+func printJSON(r io.Reader, w io.Writer) error {
+	body, err := io.ReadAll(r)
+	if err != nil {
+		return err
+	}
+
+	var result interface{}
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	decoder.UseNumber()
+	if err := decoder.Decode(&result); err != nil {
+		// Not JSON, just print raw
+		_, writeErr := w.Write(body)
+		return writeErr
+	}
+
+	encoder := json.NewEncoder(w)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(result)
 }
 
 func addAction(ctx context.Context, cmd *cli.Command) error {
