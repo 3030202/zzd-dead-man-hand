@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -477,4 +478,54 @@ func TestDeleteAction(t *testing.T) {
 		}
 
 	}
+}
+
+func TestListActionsOutput(t *testing.T) {
+	// Mock server returning JSON
+	mockResponse := `[{"id":"1","name":"foo"}]`
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(mockResponse))
+	}))
+	defer server.Close()
+
+	// Mock client
+	originalGetClient := getClient
+	defer func() { getClient = originalGetClient }()
+	getClient = func(*cli.Command) *http.Client {
+		return server.Client()
+	}
+
+	// Capture stdout
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	cmd := createCLI()
+	err := cmd.Run(context.Background(), []string{"dmh-cli", "action", "list", "--server", server.URL})
+
+	w.Close()
+	os.Stdout = oldStdout
+
+	require.Nil(t, err)
+
+	out, _ := io.ReadAll(r)
+	output := string(out)
+
+	// With pretty printing, we expect newlines and indentation.
+	// Without it, we expect the raw string.
+	// We want to verify that it DOES pretty print (eventually).
+	// For now, this test is expected to FAIL if I assert pretty printing.
+
+	// Let's assert that it matches the pretty printed format.
+	// [
+	//   {
+	//     "id": "1",
+	//     "name": "foo"
+	//   }
+	// ]
+
+	require.Contains(t, output, "[\n", "Output should contain start of array with newline")
+	require.Contains(t, output, "  {\n", "Output should contain start of object with indentation")
 }
