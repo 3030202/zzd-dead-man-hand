@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -160,6 +161,44 @@ func TestUpdateAlive(t *testing.T) {
 		}
 
 	}
+}
+
+func TestListActionsPrettyPrint(t *testing.T) {
+	// Setup capture of stdout
+	r, w, _ := os.Pipe()
+	originalStdout := os.Stdout
+	os.Stdout = w
+	defer func() {
+		os.Stdout = originalStdout
+	}()
+
+	mockHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		// Return minified JSON
+		w.Write([]byte(`[{"id":1,"name":"test"}]`))
+	}
+
+	fakeServer := httptest.NewServer(http.HandlerFunc(mockHandler))
+	defer fakeServer.Close()
+
+	originalGetClient := getClient
+	defer func() { getClient = originalGetClient }()
+	getClient = func(*cli.Command) *http.Client {
+		return fakeServer.Client()
+	}
+
+	cmd := createCLI()
+	params := []string{"dmh-cli", "action", "list", "--server", fakeServer.URL}
+
+	err := cmd.Run(context.Background(), params)
+	require.Nil(t, err)
+
+	w.Close()
+	output, _ := io.ReadAll(r)
+
+	expected := "[\n  {\n    \"id\": 1,\n    \"name\": \"test\"\n  }\n]\n"
+	require.Equal(t, expected, string(output))
 }
 
 func TestListActions(t *testing.T) {
