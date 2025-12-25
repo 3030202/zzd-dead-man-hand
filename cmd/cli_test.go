@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -219,6 +221,58 @@ func TestListActions(t *testing.T) {
 		}
 
 	}
+}
+
+func captureStdout(f func()) (string, error) {
+	old := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	f()
+
+	w.Close()
+	os.Stdout = old
+
+	var buf strings.Builder
+	_, err := io.Copy(&buf, r)
+	return buf.String(), err
+}
+
+func TestListActionsOutputFormat(t *testing.T) {
+	// Mock server returning JSON
+	mockResponse := `[{"id":"1","name":"test"}]`
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(mockResponse))
+	}))
+	defer server.Close()
+
+	// Mock getClient to use the test server
+	originalGetClient := getClient
+	defer func() { getClient = originalGetClient }()
+	getClient = func(*cli.Command) *http.Client {
+		return server.Client()
+	}
+
+	cmd := createCLI()
+	params := []string{"dmh-cli", "action", "list", "--server", server.URL}
+
+	output, err := captureStdout(func() {
+		_ = cmd.Run(context.Background(), params)
+	})
+
+	require.Nil(t, err)
+
+	// Expect pretty-printed JSON
+	expectedOutput := `[
+  {
+    "id": "1",
+    "name": "test"
+  }
+]
+`
+	require.Equal(t, expectedOutput, output)
 }
 
 func TestAddAction(t *testing.T) {
