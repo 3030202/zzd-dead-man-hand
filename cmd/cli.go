@@ -182,8 +182,26 @@ func listActions(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
 	}
 
-	_, err = io.Copy(os.Stdout, resp.Body)
-	return err
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	var data interface{}
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	decoder.UseNumber()
+
+	if err := decoder.Decode(&data); err == nil {
+		prettyJSON, err := json.MarshalIndent(data, "", "  ")
+		if err == nil {
+			fmt.Println(string(prettyJSON))
+			return nil
+		}
+	}
+
+	// Fallback to raw output
+	fmt.Print(string(body))
+	return nil
 }
 
 func addAction(ctx context.Context, cmd *cli.Command) error {
