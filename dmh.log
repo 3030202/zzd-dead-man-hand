@@ -1,0 +1,17 @@
+2026/01/07 12:08:54 /app/main.go:58: starting DMH component
+2026/01/07 12:08:54 /app/internal/state/state.go:98: unable to read state file: open ./data/state.json: no such file or directory, creating new state
+2026/01/07 12:08:54 /app/internal/metric/metric.go:75: starting prometheus collector
+2026/01/07 12:08:54 /app/internal/metric/metric.go:97: starting prometheus slow collector
+2026/01/07 12:11:56 /app/internal/api/api.go:206: wrong request data provided: message must be provided
+2026/01/07 12:12:39 /app/internal/api/api.go:220: unable to add action: Post "http://127.0.0.1:8200/api/vault/store/12345/0adda1e8-b0a6-49b7-b23e-485d03352eca": dial tcp 127.0.0.1:8200: connect: connection refused
+2026/01/07 12:19:54 /app/internal/api/api.go:206: wrong request data provided: message must be provided
+2026/01/07 12:20:43 /app/internal/api/api.go:220: unable to add action: Post "http://127.0.0.1:8200/api/vault/store/12345/62d9366d-8206-46fe-a560-51ed8147bbd2": dial tcp 127.0.0.1:8200: connect: connection refused
+2026/01/07 12:23:06 /app/internal/api/api.go:220: unable to add action: Post "http://127.0.0.1:8200/api/vault/store/12345/cda3d319-fdfc-4c27-ad5f-3ec7fc833e1f": dial tcp 127.0.0.1:8200: connect: connection refused
+2026/01/07 12:24:41 /app/internal/api/api.go:220: unable to add action: Post "http://127.0.0.1:8200/api/vault/store/12345/e5eb8629-81b0-42f1-a35d-05b31e9f3b05": dial tcp 127.0.0.1:8200: connect: connection refused
+2026/01/07 12:31:37 /app/internal/api/api.go:206: wrong request data provided: unknown kind test
+2026/01/07 12:31:37 /app/internal/api/api.go:142: wrong request data provided: unknown kind test
+2026/01/07 12:31:37 /app/internal/api/api.go:320: unable to delete action: missing action with uuid random-uuid
+2026/01/07 12:31:37 /app/internal/api/api.go:108: unable to connect to vault: Get "http://127.0.0.1:8200/api/vault/alive/12345": dial tcp 127.0.0.1:8200: connect: connection refused
+2026/01/07 12:31:37 /app/internal/api/api.go:206: wrong request data provided: unknown kind test
+2026/01/07 12:31:37 /app/internal/api/api.go:142: wrong request data provided: unknown kind test
+2026/01/07 12:31:37 /app/internal/api/api.go:320: unable to delete action: missing action with uuid test-uuid
