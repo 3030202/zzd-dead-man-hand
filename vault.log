@@ -1,0 +1,10 @@
+2026/01/07 12:14:56 /app/config.go:77: vault.key must be a valid age private key
+panic: vault.key must be a valid age private key
+
+goroutine 1 [running]:
+log.Panicf({0xa2afe8?, 0xa13e7a?}, {0x0?, 0x0?, 0x0?})
+	/usr/local/go/src/log/log.go:439 +0x65
+main.readConfig({0xc00002a0a0, 0x11})
+	/app/config.go:77 +0x845
+main.main()
+	/app/main.go:36 +0x5a
