@@ -1,17 +1,35 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v3"
 )
+
+// captureOutput captures stdout and returns it as a string
+func captureOutput(f func() error) (string, error) {
+	old := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	err := f()
+
+	w.Close()
+	os.Stdout = old
+
+	var buf bytes.Buffer
+	io.Copy(&buf, r)
+	return buf.String(), err
+}
 
 func TestActionAddRequiredParams(t *testing.T) {
 	tests := []struct {
@@ -164,9 +182,10 @@ func TestUpdateAlive(t *testing.T) {
 
 func TestListActions(t *testing.T) {
 	tests := []struct {
-		mockHandler   http.HandlerFunc
-		expectedError string
-		inputServer   string
+		mockHandler    http.HandlerFunc
+		expectedError  string
+		inputServer    string
+		expectedOutput string
 	}{
 		{
 			inputServer:   "\r",
@@ -184,7 +203,16 @@ func TestListActions(t *testing.T) {
 		{
 			mockHandler: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(`{"foo": "bar"}`))
 			},
+			expectedOutput: "{\n  \"foo\": \"bar\"\n}\n",
+		},
+		{
+			mockHandler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(`invalid json`))
+			},
+			expectedOutput: "invalid json",
 		},
 	}
 	for _, test := range tests {
@@ -210,9 +238,13 @@ func TestListActions(t *testing.T) {
 			params = []string{"dmh-cli", "action", "list"}
 		}
 
-		err := cmd.Run(context.Background(), params)
+		output, err := captureOutput(func() error {
+			return cmd.Run(context.Background(), params)
+		})
+
 		if test.expectedError == "" {
 			require.Nil(t, err)
+			require.Equal(t, test.expectedOutput, output)
 		} else {
 			require.NotNil(t, err)
 			require.Equal(t, test.expectedError, err.Error())
