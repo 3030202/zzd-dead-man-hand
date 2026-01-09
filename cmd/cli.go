@@ -61,7 +61,13 @@ func createCLI() *cli.Command {
 						Name:    "list",
 						Aliases: []string{"ls"},
 						Usage:   "List all actions",
-						Action:  listActions,
+						Flags: []cli.Flag{
+							&cli.BoolFlag{
+								Name:  "raw",
+								Usage: "Output raw JSON without formatting",
+							},
+						},
+						Action: listActions,
 					},
 					{
 						Name:  "add",
@@ -182,8 +188,32 @@ func listActions(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
 	}
 
-	_, err = io.Copy(os.Stdout, resp.Body)
-	return err
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if cmd.Bool("raw") {
+		_, err = os.Stdout.Write(body)
+		return err
+	}
+
+	var data interface{}
+	if err := json.Unmarshal(body, &data); err != nil {
+		// Fallback to raw output if not valid JSON
+		_, err = os.Stdout.Write(body)
+		return err
+	}
+
+	formatted, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		// Fallback to raw output if marshal fails
+		_, err = os.Stdout.Write(body)
+		return err
+	}
+
+	fmt.Println(string(formatted))
+	return nil
 }
 
 func addAction(ctx context.Context, cmd *cli.Command) error {
