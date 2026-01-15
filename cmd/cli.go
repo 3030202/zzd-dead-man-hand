@@ -11,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/mattn/go-isatty"
 	"github.com/urfave/cli/v3"
 )
 
@@ -18,6 +19,9 @@ var (
 	// mocks for tests
 	newRequest  = http.NewRequest
 	jsonMarshal = json.Marshal
+	isTerminal  = func(w *os.File) bool {
+		return isatty.IsTerminal(w.Fd())
+	}
 )
 
 const defaultServerAddr = "http://127.0.0.1:8080"
@@ -182,7 +186,21 @@ func listActions(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
 	}
 
-	_, err = io.Copy(os.Stdout, resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	if isTerminal(os.Stdout) {
+		var prettyJSON bytes.Buffer
+		if err := json.Indent(&prettyJSON, body, "", "  "); err == nil {
+			_, err = io.Copy(os.Stdout, &prettyJSON)
+			fmt.Println() // Add a newline after pretty printing
+			return err
+		}
+	}
+
+	_, err = io.Copy(os.Stdout, bytes.NewReader(body))
 	return err
 }
 
