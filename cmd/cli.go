@@ -18,6 +18,13 @@ var (
 	// mocks for tests
 	newRequest  = http.NewRequest
 	jsonMarshal = json.Marshal
+	isTerminal  = func(f *os.File) bool {
+		stat, err := f.Stat()
+		if err != nil {
+			return false
+		}
+		return (stat.Mode() & os.ModeCharDevice) != 0
+	}
 )
 
 const defaultServerAddr = "http://127.0.0.1:8080"
@@ -182,7 +189,20 @@ func listActions(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
 	}
 
-	_, err = io.Copy(os.Stdout, resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	if isTerminal(os.Stdout) {
+		var prettyJSON bytes.Buffer
+		if err := json.Indent(&prettyJSON, body, "", "  "); err == nil {
+			_, err := fmt.Println(prettyJSON.String())
+			return err
+		}
+	}
+
+	_, err = fmt.Print(string(body))
 	return err
 }
 
