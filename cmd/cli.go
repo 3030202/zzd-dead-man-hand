@@ -16,8 +16,9 @@ import (
 
 var (
 	// mocks for tests
-	newRequest  = http.NewRequest
-	jsonMarshal = json.Marshal
+	newRequest   = http.NewRequest
+	jsonMarshal  = json.Marshal
+	outputWriter io.Writer = os.Stdout
 )
 
 const defaultServerAddr = "http://127.0.0.1:8080"
@@ -182,7 +183,26 @@ func listActions(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
 	}
 
-	_, err = io.Copy(os.Stdout, resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	var data interface{}
+	if err := json.Unmarshal(body, &data); err != nil {
+		// If not JSON, print raw body
+		_, printErr := fmt.Fprintf(outputWriter, "%s", body)
+		return printErr
+	}
+
+	indented, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		// Should not happen if Unmarshal worked, but fallback just in case
+		_, err := fmt.Fprintf(outputWriter, "%s", body)
+		return err
+	}
+
+	_, err = fmt.Fprintln(outputWriter, string(indented))
 	return err
 }
 
@@ -236,7 +256,7 @@ func addAction(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
 	}
 
-	fmt.Println("Action added successfully")
+	fmt.Fprintln(outputWriter, "Action added successfully")
 	return nil
 }
 
@@ -283,7 +303,7 @@ func testAction(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
 	}
 
-	fmt.Println("Action tested successfully")
+	fmt.Fprintln(outputWriter, "Action tested successfully")
 	return nil
 }
 
@@ -321,6 +341,6 @@ func deleteAction(ctx context.Context, cmd *cli.Command) error {
 		return fmt.Errorf("server returned status %d: %s", resp.StatusCode, string(body))
 	}
 
-	fmt.Println("Action deleted successfully")
+	fmt.Fprintln(outputWriter, "Action deleted successfully")
 	return nil
 }
