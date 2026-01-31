@@ -184,7 +184,7 @@ func TestMailRun(t *testing.T) {
 				config: MailConfig{
 					Username:    "",
 					Password:    "",
-					Server:      "localhost",
+					Server:      "localhost:5870",
 					TLSPolicy:   "tls_mandatory",
 					TLSInsecure: true,
 					From:        "test@test.com",
@@ -201,7 +201,7 @@ func TestMailRun(t *testing.T) {
 				config: MailConfig{
 					Username:    "test",
 					Password:    "test",
-					Server:      "localhost",
+					Server:      "localhost:5870",
 					TLSPolicy:   "tls_mandatory",
 					TLSInsecure: true,
 					From:        "test@test.com",
@@ -218,7 +218,7 @@ func TestMailRun(t *testing.T) {
 				config: MailConfig{
 					Username:    "test",
 					Password:    "test",
-					Server:      "localhost",
+					Server:      "localhost:5870",
 					TLSPolicy:   "tls_mandatory",
 					TLSInsecure: true,
 					From:        "test@test.com",
@@ -235,7 +235,7 @@ func TestMailRun(t *testing.T) {
 				config: MailConfig{
 					Username:    "test",
 					Password:    "test",
-					Server:      "localhost",
+					Server:      "localhost:5870",
 					TLSPolicy:   "tls_opportunistic",
 					TLSInsecure: true,
 					From:        "test@test.com",
@@ -252,7 +252,7 @@ func TestMailRun(t *testing.T) {
 				config: MailConfig{
 					Username:    "test",
 					Password:    "test",
-					Server:      "localhost",
+					Server:      "localhost:2525",
 					TLSPolicy:   "no_tls",
 					TLSInsecure: false,
 					From:        "test@test.com",
@@ -278,7 +278,7 @@ func TestMailRun(t *testing.T) {
 		if test.inputMockSMTPHandler != nil {
 			smtpHandler = test.inputMockSMTPHandler
 			smtpServer = smtp.NewServer(smtpHandler)
-			smtpServer.Addr = ":587"
+			smtpServer.Addr = ":5870"
 			smtpServer.Domain = "localhost"
 			smtpServer.AllowInsecureAuth = true
 			if test.inputSMTPServerWithTLS {
@@ -288,9 +288,9 @@ func TestMailRun(t *testing.T) {
 				tlsConfig.Certificates[0], err = tls.LoadX509KeyPair("cert.pem", "key.pem")
 				require.Nil(t, err)
 				smtpServer.TLSConfig = tlsConfig
-				smtpServer.Addr = ":587"
+				smtpServer.Addr = ":5870"
 			} else {
-				smtpServer.Addr = ":25"
+				smtpServer.Addr = ":2525"
 			}
 			go func() {
 				err := smtpServer.ListenAndServe()
